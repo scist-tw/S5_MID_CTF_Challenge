@@ -7,6 +7,7 @@
   * RS256
 * Misc
   * Trick or Treat
+  * Colorful
 
 ### References
 * [killua4564 writeup](https://hackmd.io/zBAmlpJITdmSh_olXwbnIQ)
