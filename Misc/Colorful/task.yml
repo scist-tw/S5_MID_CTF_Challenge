@@ -1,0 +1,15 @@
+name: "Colorful"
+description: |
+  To avoid detection by hackers, I’ve secretly encrypted the flag and sent it to you. 
+  It’s now up to you to uncover its secrets and retrieve the hidden treasure. 
+  Can you crack the code and prove your skills? Good luck! 👀
+  ![hacker](https://dcfilmschool.com/storage/app/uploads/public/5d3/16f/584/5d316f584d8e5071925256.jpg)
+
+  Author: Kazma
+flag: "SCIST{R3D_and_6R33N_and_BLU3_M4k3_M4g1c}"
+author: Kazma
+tags:
+  - misc
+canonical_name: colorful
+distfiles:
+  - ./dist/colorful
