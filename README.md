@@ -1,6 +1,10 @@
 # SCIST S5 MID CTF Challenge
 
 ### Challenges
+* Web
+  * dig-waf4
+  * no sql injection blind2
+  * xss5
 * Crypto
   * Elgamal oracle
   * LCG cipher
@@ -8,6 +12,7 @@
 * Misc
   * Trick or Treat
   * Colorful
+  * dateviewer
 
 ### References
 * [killua4564 writeup](https://hackmd.io/zBAmlpJITdmSh_olXwbnIQ)
