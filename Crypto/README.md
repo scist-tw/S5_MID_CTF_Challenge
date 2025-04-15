@@ -177,6 +177,7 @@ def get_backward_prime() -> int:
 ```
 * `JWT256` 是個[抽象類別](https://docs.python.org/3/library/abc.html)，定義一些基本的呼叫方法
   * `base64encode` 和 `base64decode` 是 JWT 中 `base64` 編碼的變體，可以直接引用就好
+  * `parse` 和 `unparse` 會將 `dict` 和 `querystring` 互轉，相同的 `key` 會以最後一個 `value` 為主
   * `encode` 和 `decode` 會分別將生成或驗證好 `header`、`body` 和 `signature`，然後回傳 `token` 或 `body`
       * `header` 由 `alg` 和 `typ` 組成，`alg` 為類別的名字，`typ` 固定為抽象類別名稱 `JWT256`，驗證時會檢查該有的資料是否還在，基本上可以不用理會這邊
       * `body` 為傳進來編碼的 `payload` 和 `iat` 組成，驗證時會檢查 `iat` 的時間戳是否在 `exp` 的範圍內
@@ -194,6 +195,14 @@ def base64decode(cls, data: str) -> bytes:
     data = data + "=" * (-len(data) % 4)
     return base64.b64decode(data.encode())
 
+@classmethod
+def parse(cls, data: bytes) -> dict[bytes, bytes]:
+    return dict(map(lambda item: item.split(b"=", 1), data.split(b"&")))
+
+@classmethod
+def unparse(cls, data: dict[bytes, bytes]) -> bytes:
+    return b"&".join(map(b"=".join, data.items()))
+
 def encode(self, payload: dict[bytes, bytes]) -> str:
     header = self.generate_header()
     body = self.generate_body(payload)
@@ -205,27 +214,27 @@ def decode(self, token: str) -> dict[bytes, list[bytes]]:
     self.verify_header(header)
     self.verify_body(body)
     self.verify_signature(header + b"." + body, signature)
-    return parse_qs(body)
+    return self.parse(body)
 
 def generate_body(self, payload: dict[bytes, bytes]) -> bytes:
     payload[b"iat"] = f"{int(datetime.datetime.now().timestamp())}".encode()
-    return urlencode(payload).encode()
+    return self.unparse(payload)
 
 def generate_header(self) -> bytes:
     payload = {b"alg": self.alg, b"typ": self.typ}
-    return urlencode(payload).encode()
+    return self.unparse(payload)
 
 def generate_signature(self, message: bytes) -> bytes:
     return hashlib.sha256(self.secret + message).digest()
 
 def verify_body(self, body: bytes):
-    issued_at = int(parse_qs(body)[b"iat"][-1].decode())
+    issued_at = int(self.parse(body)[b"iat"].decode())
     if datetime.datetime.fromtimestamp(issued_at) + self.exp < datetime.datetime.now():
         raise ValueError("Verify body failed.")
 
 def verify_header(self, header: bytes):
-    payload = parse_qs(header)
-    if self.alg not in payload[b"alg"] or self.typ not in payload[b"typ"]:
+    payload = self.parse(header)
+    if not (self.alg == payload[b"alg"] and self.typ == payload[b"typ"]):
         raise ValueError("Verify header failed.")
 
 def verify_signature(self, message: bytes, signature: bytes):

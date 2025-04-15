@@ -5,7 +5,6 @@ import hashlib
 import json
 import os
 import sys
-from urllib.parse import parse_qs, urlencode
 
 from Crypto.Random.random import randrange
 from Crypto.Util.number import bytes_to_long, getPrime, inverse, isPrime, long_to_bytes, size
@@ -80,6 +79,14 @@ class JWT256(abc.ABC):
         data = data + "=" * (-len(data) % 4)
         return base64.b64decode(data.encode())
 
+    @classmethod
+    def parse(cls, data: bytes) -> dict[bytes, bytes]:
+        return dict(map(lambda item: item.split(b"=", 1), data.split(b"&")))
+
+    @classmethod
+    def unparse(cls, data: dict[bytes, bytes]) -> bytes:
+        return b"&".join(map(b"=".join, data.items()))
+
     def encode(self, payload: dict[bytes, bytes]) -> str:
         header = self.generate_header()
         body = self.generate_body(payload)
@@ -91,27 +98,27 @@ class JWT256(abc.ABC):
         self.verify_header(header)
         self.verify_body(body)
         self.verify_signature(header + b"." + body, signature)
-        return parse_qs(body)
+        return self.parse(body)
 
     def generate_body(self, payload: dict[bytes, bytes]) -> bytes:
         payload[b"iat"] = f"{int(datetime.datetime.now().timestamp())}".encode()
-        return urlencode(payload).encode()
+        return self.unparse(payload)
 
     def generate_header(self) -> bytes:
         payload = {b"alg": self.alg, b"typ": self.typ}
-        return urlencode(payload).encode()
+        return self.unparse(payload)
 
     def generate_signature(self, message: bytes) -> bytes:
         return hashlib.sha256(self.secret + message).digest()
 
     def verify_body(self, body: bytes):
-        issued_at = int(parse_qs(body)[b"iat"][-1].decode())
+        issued_at = int(self.parse(body)[b"iat"].decode())
         if datetime.datetime.fromtimestamp(issued_at) + self.exp < datetime.datetime.now():
             raise ValueError("Verify body failed.")
 
     def verify_header(self, header: bytes):
-        payload = parse_qs(header)
-        if self.alg not in payload[b"alg"] or self.typ not in payload[b"typ"]:
+        payload = self.parse(header)
+        if not (self.alg == payload[b"alg"] and self.typ == payload[b"typ"]):
             raise ValueError("Verify header failed.")
 
     def verify_signature(self, message: bytes, signature: bytes):
@@ -154,9 +161,9 @@ def main():
             print(f"Hi {username}, your token is: {token}")
         elif cmd == "login":
             data = provider.decode(input("> Input token: ").strip())
-            username = b" ".join(data[b"username"]).decode()
+            username = data[b"username"].decode()
             print(f"Hi {username}.")
-            if b"Y" in data[b"admin"]:
+            if data[b"admin"] == b"Y":
                 print(f"Administrator can read the flag: {FLAG}")
         elif cmd == "server.py":
             read_server()
