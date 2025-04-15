@@ -1,5 +1,8 @@
 # SCIST S5 MID CTF Challenge
 
+### Write-up
+[Official Write-up](https://hackmd.io/@SCIST/S5_MID_CTF/)
+
 ### Challenges
 * Web
   * dig-waf4
